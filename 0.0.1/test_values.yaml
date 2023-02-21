@@ -1,0 +1,36 @@
+appVolumeMounts:
+  home:
+    emptyDir: true
+    mountPath: /home/arm
+  config:
+    emptyDir: true
+    mountPath: /etc/arm/config
+  media:
+    emptyDir: true
+    mountPath: /home/arm/media
+  logs:
+    emptyDir: true
+    mountPath: /home/arm/logs
+  music:
+    emptyDir: true
+    mountPath: /home/arm/media/Music
+dnsConfig:
+  options: []
+emptyDirVolumes: true
+environmentVariables: []
+extraAppVolumeMounts:
+- hostPath: /mnt/extras/hello
+  mountPath: /mnt/extras
+  readOnly: true
+gpuConfiguration: {}
+hostNetwork: false
+image:
+  pullPolicy: IfNotPresent
+  repository: automaticrippingmachine/automatic-ripping-machine
+  tag: latest
+armServiceTCP:
+  port: 8080
+timezone: Etc/UTC
+armUID: 1000
+armGID: 1000
+updateStrategy: Recreate
