@@ -1,5 +1,31 @@
 {{ include "common.storage.hostPathValidate" .Values }}
-{{ include "common.deployment.common_config" . | nindent 0 }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "common.names.fullname" . }}
+  labels:
+    app: {{ template "common.names.name" . }}
+    chart: {{ template "common.names.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    rollme: {{ randAlphaNum 5 | quote }}
+spec:
+  replicas: {{ (default 1 .Values.replicas) }}
+  strategy:
+    type: "Recreate"
+  selector:
+    matchLabels:
+      app: {{ template "common.names.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      name: {{ template "common.names.fullname" . }}
+      labels:
+        app: {{ template "common.names.name" . }}
+        release: {{ .Release.Name }}
+        {{- include "common.labels.selectorLabels" . | nindent 8 }}
+      annotations: {{ include "common.annotations" . | nindent 8 }}
 spec: {{ include "common.deployment.common_spec" . | nindent 2 }}
   template: {{ include "common.deployment.pod.metadata" . | nindent 4 }}
     spec:
@@ -19,9 +45,9 @@ spec: {{ include "common.deployment.common_spec" . | nindent 2 }}
           {{ end }}
           ports:
             - name: web
-              port: 8080
               containerPort: {{ .Values.web_port }}
-              protocol: TCP
+          securityContext:
+            privileged: true
           env:
             - name: KUBE_NAMESPACE
               valueFrom:
@@ -31,7 +57,7 @@ spec: {{ include "common.deployment.common_spec" . | nindent 2 }}
             {{ if and .Values.gpuConfiguration (hasKey .Values.gpuConfiguration "nvidia.com/gpu") (gt (get .Values.gpuConfiguration "nvidia.com/gpu" | toDecimal) 0) }}
             {{ $envList = mustAppend $envList (dict "name" "NVIDIA_DRIVER_CAPABILITIES" "value" "all") }}
             {{ end }}
-            {{ $envList = mustAppend $envList (dict "name" "arnUID" "value" .Values.armUID) }}
+            {{ $envList = mustAppend $envList (dict "name" "armUID" "value" .Values.armUID) }}
             {{ $envList = mustAppend $envList (dict "name" "armGID" "value" .Values.armGID) }}
             {{ $envList = mustAppend $envList (dict "name" "TZ" "value" .Values.timezone) }}
             {{ include "common.containers.environmentVariables" (dict "environmentVariables" $envList) | nindent 12 }}
@@ -42,3 +68,4 @@ spec: {{ include "common.deployment.common_spec" . | nindent 2 }}
           hostPath:
             path: {{ $hostPathConfiguration.hostPath }}
       {{ end }}
+      backoffLimit: 9
